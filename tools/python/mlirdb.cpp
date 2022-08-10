@@ -5,8 +5,13 @@
 #include "runner/runner.h"
 #include "runtime/ExternalArrowDatabase.h"
 
-runtime::ExecutionContext* executionContext;
+// Note that this cannot be a unique_ptr since the memory in Python may have to
+// stay valid after unloading this code.
+runtime::ExecutionContext* executionContext{nullptr};
 void load(pybind11::dict dictionary) {
+   if (executionContext != nullptr) {
+      delete executionContext;
+   }
    executionContext = new runtime::ExecutionContext;
    auto database = std::make_unique<runtime::ExternalArrowDatabase>();
    for (auto item : dictionary) {
