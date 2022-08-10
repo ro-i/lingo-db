@@ -83,8 +83,12 @@ run-test: build/lingodb-debug/.stamp
 	env LD_LIBRARY_PATH=${ROOT_DIR}/build/arrow/install/lib ./build/llvm-build/bin/llvm-lit -v $(dir $<)/test/lit
 .PHONY: run-benchmark
 run-benchmark: build/lingodb-release/.stamp resources/data/tpch-1/.stamp
-	cmake --build $(dir $<) --target run-sql -- -j${NPROCS}
+	cmake --build $(dir $<) --target run-sql sql -- -j${NPROCS}
 	env QUERY_RUNS=5 env LINGO_DEBUG_MODE=SPEED python3 tools/scripts/benchmark-tpch.py $(dir $<) tpch-1
+
+.PHONY: release
+release: build/lingodb-release/.stamp
+	cmake --build $(dir $<) --target mlir-db-opt run-mlir run-sql pymlirdbext sql-to-mlir mlir-doc sql -- -j${NPROCS}
 
 docker-buildimg:
 	DOCKER_BUILDKIT=1 docker build -f "tools/docker/Dockerfile" -t lingodb-buildimg:$(shell echo "$$(git submodule status)" | cut -c 2-9 | tr '\n' '-') --target buildimg "."
